@@ -1,0 +1,4 @@
+GET https://example.com/search
+    ?q={{query}}
+    &limit=10
+Accept: application/json

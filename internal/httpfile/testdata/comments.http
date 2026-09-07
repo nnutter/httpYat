@@ -1,0 +1,11 @@
+/*
+  ignored block comment
+*/
+
+# file comment
+@host = https://example.com
+
+### Get thing
+# first comment becomes description
+// also a comment
+GET {{host}}/thing
