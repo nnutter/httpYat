@@ -1,0 +1,5 @@
+@foo=bar
+@fooExtended={{foo}}_Extended
+
+GET https://example.com/anything?q={{fooExtended}}
+Authorization: Bearer {{token}}

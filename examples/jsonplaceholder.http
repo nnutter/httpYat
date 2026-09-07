@@ -1,0 +1,29 @@
+@base = https://jsonplaceholder.typicode.com
+@postId = 1
+
+### List posts
+# @name listPosts
+GET {{base}}/posts
+Accept: application/json
+
+### Get post
+# @name getPost
+GET {{base}}/posts/{{postId}}
+Accept: application/json
+
+### List users
+# @name listUsers
+GET {{base}}/users
+Accept: application/json
+
+### Create post
+# @name createPost
+POST {{base}}/posts
+Content-Type: application/json
+Accept: application/json
+
+{
+  "title": "hello",
+  "body": "from httpyat",
+  "userId": 1
+}

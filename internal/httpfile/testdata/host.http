@@ -1,0 +1,4 @@
+@host=https://httpbin.org
+###
+GET /post
+Accept: application/json

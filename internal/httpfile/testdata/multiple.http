@@ -1,0 +1,20 @@
+@host = https://api.example.com
+
+### List users
+# @name listUsers
+GET {{host}}/users
+Accept: application/json
+
+### Create user
+# @description Register a user
+# @name createUser
+POST {{host}}/users
+Content-Type: application/json
+Accept: application/json
+
+{
+  "name": "{{name}}"
+}
+
+###
+GET {{host}}/health
