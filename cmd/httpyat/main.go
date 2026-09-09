@@ -14,6 +14,11 @@ import (
 
 var version = "dev"
 
+type options struct {
+	bin     string
+	timeout time.Duration
+}
+
 func main() {
 	os.Exit(run(os.Args, os.Stdout, os.Stderr, tui.Run))
 }
@@ -40,12 +45,17 @@ func run(args []string, stdout, stderr io.Writer, start func(tui.Model) error) i
 		return 2
 	}
 	path := fs.Arg(0)
+	opts := options{bin: *bin, timeout: *timeout}
+	return launch(path, opts, stderr, start)
+}
+
+func launch(path string, opts options, stderr io.Writer, start func(tui.Model) error) int {
 	docs, err := httpfile.LoadPath(path)
 	if err != nil {
 		_, _ = fmt.Fprintf(stderr, "httpyat: %v\n", err)
 		return 1
 	}
-	model := tui.NewWorkspace(docs, client.New(client.Options{Bin: *bin, Timeout: *timeout}), *timeout)
+	model := tui.NewWorkspace(docs, client.New(client.Options{Bin: opts.bin, Timeout: opts.timeout}), opts.timeout)
 	if err := start(model); err != nil {
 		_, _ = fmt.Fprintf(stderr, "httpyat: %v\n", err)
 		return 1
