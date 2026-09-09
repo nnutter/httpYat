@@ -28,12 +28,16 @@ func main() {
 func newRootCmd(stdout, stderr io.Writer, start func(tui.Model) error) *cobra.Command {
 	var opts options
 	cmd := &cobra.Command{
-		Use:   "httpyat <file.http|dir>",
+		Use:   "httpyat [file.http|dir]",
 		Short: "Browse and send httpYac requests",
 		Long:  "httpYat is a TUI over httpYac .http files. The TUI lists requests; httpyac send executes them.",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(_ *cobra.Command, args []string) error {
-			return launch(args[0], opts, start)
+			path := "."
+			if len(args) > 0 {
+				path = args[0]
+			}
+			return launch(path, opts, start)
 		},
 	}
 	cmd.SetOut(stdout)

@@ -24,12 +24,27 @@ func TestExecuteVersion(t *testing.T) {
 
 func TestExecuteUsage(t *testing.T) {
 	var errBuf bytes.Buffer
-	code := execute([]string{}, ioDiscard(), &errBuf, func(tui.Model) error { return nil })
+	code := execute([]string{"a.http", "b.http"}, ioDiscard(), &errBuf, func(tui.Model) error { return nil })
 	if code != 1 {
 		t.Fatalf("code = %d", code)
 	}
-	if !strings.Contains(strings.ToLower(errBuf.String()), "accepts 1 arg") {
+	if !strings.Contains(strings.ToLower(errBuf.String()), "accepts at most 1 arg") {
 		t.Fatalf("err = %q", errBuf.String())
+	}
+}
+
+func TestExecuteDefaultsToCurrentDirectory(t *testing.T) {
+	t.Chdir(t.TempDir())
+	if err := os.WriteFile("api.http", []byte("GET https://example.com/ping\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	var started bool
+	code := execute([]string{}, ioDiscard(), ioDiscard(), func(tui.Model) error {
+		started = true
+		return nil
+	})
+	if code != 0 || !started {
+		t.Fatalf("code=%d started=%v", code, started)
 	}
 }
 
