@@ -1,11 +1,13 @@
 package main
 
 import (
-	"flag"
-	"fmt"
+	"context"
 	"io"
 	"os"
 	"time"
+
+	"github.com/charmbracelet/fang"
+	"github.com/spf13/cobra"
 
 	"github.com/nnutter/httpYat/internal/client"
 	"github.com/nnutter/httpYat/internal/httpfile"
@@ -20,45 +22,44 @@ type options struct {
 }
 
 func main() {
-	os.Exit(run(os.Args, os.Stdout, os.Stderr, tui.Run))
+	os.Exit(execute(os.Args[1:], os.Stdout, os.Stderr, tui.Run))
 }
 
-func run(args []string, stdout, stderr io.Writer, start func(tui.Model) error) int {
-	fs := flag.NewFlagSet("httpyat", flag.ContinueOnError)
-	fs.SetOutput(stderr)
-	timeout := fs.Duration("timeout", 30*time.Second, "httpyac request timeout")
-	bin := fs.String("httpyac", "httpyac", "httpyac CLI binary")
-	showVersion := fs.Bool("version", false, "print version")
-	fs.Usage = func() {
-		_, _ = fmt.Fprintf(stderr, "usage: httpyat [flags] <file.http|dir>\n")
-		fs.PrintDefaults()
+func newRootCmd(stdout, stderr io.Writer, start func(tui.Model) error) *cobra.Command {
+	var opts options
+	cmd := &cobra.Command{
+		Use:   "httpyat <file.http|dir>",
+		Short: "Browse and send httpYac requests",
+		Long:  "httpYat is a TUI over httpYac .http files. The TUI lists requests; httpyac send executes them.",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(_ *cobra.Command, args []string) error {
+			return launch(args[0], opts, start)
+		},
 	}
-	if err := fs.Parse(args[1:]); err != nil {
-		return 2
-	}
-	if *showVersion {
-		_, _ = fmt.Fprintln(stdout, version)
-		return 0
-	}
-	if fs.NArg() != 1 {
-		fs.Usage()
-		return 2
-	}
-	path := fs.Arg(0)
-	opts := options{bin: *bin, timeout: *timeout}
-	return launch(path, opts, stderr, start)
+	cmd.SetOut(stdout)
+	cmd.SetErr(stderr)
+	cmd.Flags().DurationVar(&opts.timeout, "timeout", 30*time.Second, "httpyac request timeout")
+	cmd.Flags().StringVar(&opts.bin, "httpyac", "httpyac", "httpyac CLI binary")
+	return cmd
 }
 
-func launch(path string, opts options, stderr io.Writer, start func(tui.Model) error) int {
-	docs, err := httpfile.LoadPath(path)
-	if err != nil {
-		_, _ = fmt.Fprintf(stderr, "httpyat: %v\n", err)
-		return 1
-	}
-	model := tui.NewWorkspace(docs, client.New(client.Options{Bin: opts.bin, Timeout: opts.timeout}), opts.timeout)
-	if err := start(model); err != nil {
-		_, _ = fmt.Fprintf(stderr, "httpyat: %v\n", err)
+func execute(args []string, stdout, stderr io.Writer, start func(tui.Model) error) int {
+	cmd := newRootCmd(stdout, stderr, start)
+	cmd.SetArgs(args)
+	if err := fang.Execute(context.Background(), cmd, fang.WithVersion(version)); err != nil {
 		return 1
 	}
 	return 0
+}
+
+func launch(path string, opts options, start func(tui.Model) error) error {
+	docs, err := httpfile.LoadPath(path)
+	if err != nil {
+		return err
+	}
+	model := tui.NewWorkspace(docs, client.New(client.Options{Bin: opts.bin, Timeout: opts.timeout}), opts.timeout)
+	if err := start(model); err != nil {
+		return err
+	}
+	return nil
 }
